@@ -3,11 +3,11 @@
 #include <ESPAsyncWebServer.h>
 
 // 네트워크 자격 증명으로 바꾸기
-const char* ssid = "";
-const char* password = "";
+const char* ssid = ""; // 채워 널으세요
+const char* password = ""; // 채워 널으세요
 
 bool ledState = 0;
-const int ledPin = 45;
+const int ledPin = 45; // 빨강 LED
 
 //포트 80에 AsyncWebServer 개체 생성
 AsyncWebServer server(80);
@@ -175,7 +175,7 @@ void initWebSocket() {
   server.addHandler(&ws);
 }
 
-String processor(const String& var){
+String processor(const String& var){ // LED상태값 출력
   Serial.println(var);
   if(var == "STATE"){
     if (ledState){
@@ -189,23 +189,23 @@ String processor(const String& var){
 }
 
 void setup(){
-  // Serial port for debugging purposes
+  // 디버깅 목적의 직렬 포트
   Serial.begin(115200);
 
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, LOW);
+  pinMode(ledPin, OUTPUT); // 출력포트로 선언
+  digitalWrite(ledPin, LOW); // OFF상태
   
-  // Connect to Wi-Fi
+  // Wi-Fi에 연결
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi..");
   }
 
-  // ESP 로컬 IP 주소 인쇄
+  // 로컬 IP 주소 인쇄
   Serial.println(WiFi.localIP());
 
-  initWebSocket();
+  initWebSocket(); // 웹소켓 초기화
 
   // 루트/웹 페이지 경로
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -218,10 +218,5 @@ void setup(){
 
 void loop() {
   ws.cleanupClients();
-  digitalWrite(ledPin, ledState);
-}
-
-void loop() {
-  ws.cleanupClients();
-  digitalWrite(ledPin, ledState);
+  digitalWrite(ledPin, ledState); // LED값 출력
 }
