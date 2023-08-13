@@ -1,23 +1,22 @@
-// Import required libraries
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
-// Replace with your network credentials
-const char* ssid = "U+NetE51C";
-const char* password = "DA9969P73#";
+// 네트워크 자격 증명으로 바꾸기
+const char* ssid = "";
+const char* password = "";
 
 bool ledState = 0;
 const int ledPin = 45;
 
-// Create AsyncWebServer object on port 80
+//포트 80에 AsyncWebServer 개체 생성
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
-  <title>ESP Web Server</title>
+  <title>Web Server</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:,">
   <style>
@@ -69,7 +68,6 @@ const char index_html[] PROGMEM = R"rawliteral(
     user-select: none;
     -webkit-tap-highlight-color: rgba(0,0,0,0);
    }
-   /*.button:hover {background-color: #0f8b8d}*/
    .button:active {
      background-color: #0f8b8d;
      box-shadow: 2 2px #CDCDCD;
@@ -81,13 +79,13 @@ const char index_html[] PROGMEM = R"rawliteral(
      font-weight: bold;
    }
   </style>
-<title>ESP Web Socket Server</title>
+<title>Web Socket Server</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:,">
 </head>
 <body>
   <div class="topnav">
-    <h1>ESP WebSocket Server</h1>
+    <h1>WebSocket Server</h1>
   </div>
   <div class="content">
     <div class="card">
@@ -204,18 +202,23 @@ void setup(){
     Serial.println("Connecting to WiFi..");
   }
 
-  // Print ESP Local IP Address
+  // ESP 로컬 IP 주소 인쇄
   Serial.println(WiFi.localIP());
 
   initWebSocket();
 
-  // Route for root / web page
+  // 루트/웹 페이지 경로
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", index_html, processor);
   });
 
-  // Start server
+  // server시작
   server.begin();
+}
+
+void loop() {
+  ws.cleanupClients();
+  digitalWrite(ledPin, ledState);
 }
 
 void loop() {
