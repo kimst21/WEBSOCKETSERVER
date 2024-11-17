@@ -7,7 +7,7 @@ const char* ssid = ""; // 채워 널으세요
 const char* password = ""; // 채워 널으세요
 
 bool ledState = 0;
-const int ledPin = 45; // 빨강 LED
+const int ledPin = 41; // 빨강 LED
 
 //포트 80에 AsyncWebServer 개체 생성
 AsyncWebServer server(80);
