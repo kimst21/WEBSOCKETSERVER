@@ -1,18 +1,20 @@
-#include <WiFi.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
+#include <WiFi.h>  // WiFi 기능을 사용하기 위한 라이브러리
+#include <AsyncTCP.h>  // 비동기 TCP 통신을 위한 라이브러리
+#include <ESPAsyncWebServer.h>  // 비동기 웹 서버 라이브러리
 
-// 네트워크 자격 증명으로 바꾸기
-const char* ssid = ""; // 채워 널으세요
-const char* password = ""; // 채워 널으세요
+// WiFi 네트워크 정보 (사용자가 자신의 네트워크 정보를 입력해야 함)
+const char* ssid = ""; // WiFi SSID
+const char* password = ""; // WiFi 비밀번호
 
-bool ledState = 0;
-const int ledPin = 41; // 빨강 LED
+// LED 상태 및 핀 설정
+bool ledState = 0; // LED 상태 저장 (0: OFF, 1: ON)
+const int ledPin = 41; // 빨강 LED가 연결된 GPIO 핀
 
-//포트 80에 AsyncWebServer 개체 생성
-AsyncWebServer server(80);
-AsyncWebSocket ws("/ws");
+// 웹 서버 및 웹소켓(WebSocket) 객체 생성
+AsyncWebServer server(80); // 포트 80에서 웹 서버 실행
+AsyncWebSocket ws("/ws");  // 웹소켓 경로 "/ws" 설정
 
+// 웹 인터페이스 HTML 코드 (ESP32의 플래시 메모리에서 직접 제공)
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
@@ -46,7 +48,7 @@ const char index_html[] PROGMEM = R"rawliteral(
     margin: 0 auto;
   }
   .card {
-    background-color: #F8F7F9;;
+    background-color: #F8F7F9;
     box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5);
     padding-top:10px;
     padding-bottom:20px;
@@ -60,17 +62,11 @@ const char index_html[] PROGMEM = R"rawliteral(
     background-color: #0f8b8d;
     border: none;
     border-radius: 5px;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
-    -webkit-tap-highlight-color: rgba(0,0,0,0);
    }
    .button:active {
      background-color: #0f8b8d;
-     box-shadow: 2 2px #CDCDCD;
+     box-shadow: 2px 2px #CDCDCD;
      transform: translateY(2px);
    }
    .state {
@@ -79,9 +75,6 @@ const char index_html[] PROGMEM = R"rawliteral(
      font-weight: bold;
    }
   </style>
-<title>Web Socket Server</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="data:,">
 </head>
 <body>
   <div class="topnav">
@@ -89,7 +82,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   </div>
   <div class="content">
     <div class="card">
-      <h2>Output - GPIO 45</h2>
+      <h2>Output - GPIO 41</h2>
       <p class="state">state: <span id="state">%STATE%</span></p>
       <p><button id="button" class="button">Toggle</button></p>
     </div>
@@ -98,12 +91,13 @@ const char index_html[] PROGMEM = R"rawliteral(
   var gateway = `ws://${window.location.hostname}/ws`;
   var websocket;
   window.addEventListener('load', onLoad);
+
   function initWebSocket() {
     console.log('Trying to open a WebSocket connection...');
     websocket = new WebSocket(gateway);
     websocket.onopen    = onOpen;
     websocket.onclose   = onClose;
-    websocket.onmessage = onMessage; // <-- add this line
+    websocket.onmessage = onMessage;
   }
   function onOpen(event) {
     console.log('Connection opened');
@@ -137,21 +131,24 @@ const char index_html[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
+// 모든 웹소켓 클라이언트에게 LED 상태 전송
 void notifyClients() {
   ws.textAll(String(ledState));
 }
 
+// 웹소켓 메시지 처리 함수 (클라이언트로부터 메시지를 수신할 때 실행됨)
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
     data[len] = 0;
-    if (strcmp((char*)data, "toggle") == 0) {
+    if (strcmp((char*)data, "toggle") == 0) { // "toggle" 명령 수신 시 LED 상태 변경
       ledState = !ledState;
-      notifyClients();
+      notifyClients(); // 모든 클라이언트에게 LED 상태 전송
     }
   }
 }
 
+// 웹소켓 이벤트 핸들러
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
              void *arg, uint8_t *data, size_t len) {
   switch (type) {
@@ -170,53 +167,48 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
   }
 }
 
+// 웹소켓 초기화 함수
 void initWebSocket() {
   ws.onEvent(onEvent);
   server.addHandler(&ws);
 }
 
-String processor(const String& var){ // LED상태값 출력
+// HTML 변수 처리 함수 (LED 상태 값 반환)
+String processor(const String& var){
   Serial.println(var);
   if(var == "STATE"){
-    if (ledState){
-      return "ON";
-    }
-    else{
-      return "OFF";
-    }
+    return ledState ? "ON" : "OFF";
   }
   return String();
 }
 
 void setup(){
-  // 디버깅 목적의 직렬 포트
-  Serial.begin(115200);
+  Serial.begin(115200); // 디버깅용 시리얼 출력 시작
 
-  pinMode(ledPin, OUTPUT); // 출력포트로 선언
-  digitalWrite(ledPin, LOW); // OFF상태
+  pinMode(ledPin, OUTPUT); // LED 핀을 출력 모드로 설정
+  digitalWrite(ledPin, LOW); // 초기 상태를 OFF로 설정
   
-  // Wi-Fi에 연결
+  // Wi-Fi 연결 설정
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED) { // WiFi가 연결될 때까지 대기
     delay(1000);
     Serial.println("Connecting to WiFi..");
   }
 
-  // 로컬 IP 주소 인쇄
-  Serial.println(WiFi.localIP());
+  Serial.println(WiFi.localIP()); // 연결된 IP 주소 출력
 
   initWebSocket(); // 웹소켓 초기화
 
-  // 루트/웹 페이지 경로
+  // 루트 URL("/") 요청 시 웹 페이지 제공
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", index_html, processor);
   });
 
-  // server시작
-  server.begin();
+  server.begin(); // 웹 서버 시작
 }
 
+// 메인 루프 (웹소켓 클라이언트 정리 및 LED 제어)
 void loop() {
-  ws.cleanupClients();
-  digitalWrite(ledPin, ledState); // LED값 출력
+  ws.cleanupClients(); // 끊어진 웹소켓 클라이언트 정리
+  digitalWrite(ledPin, ledState); // LED 상태에 따라 GPIO 출력 조정
 }
