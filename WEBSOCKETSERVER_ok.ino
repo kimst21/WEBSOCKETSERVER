@@ -8,7 +8,7 @@ const char* password = ""; // WiFi 비밀번호
 
 // LED 상태 및 핀 설정
 bool ledState = 0; // LED 상태 저장 (0: OFF, 1: ON)
-const int ledPin = 41; // 빨강 LED가 연결된 GPIO 핀
+const int ledPin = 35; // 빨강 LED가 연결된 GPIO 핀
 
 // 웹 서버 및 웹소켓(WebSocket) 객체 생성
 AsyncWebServer server(80); // 포트 80에서 웹 서버 실행
@@ -82,7 +82,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   </div>
   <div class="content">
     <div class="card">
-      <h2>Output - GPIO 41</h2>
+      <h2>Output - GPIO 35</h2>
       <p class="state">state: <span id="state">%STATE%</span></p>
       <p><button id="button" class="button">Toggle</button></p>
     </div>
